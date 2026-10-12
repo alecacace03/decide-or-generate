@@ -108,7 +108,10 @@ def main():
     print(f"Ready: {url}  (Ctrl+C to stop)")
     if not args.no_browser:
         webbrowser.open(url)
-    ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
+    try:
+        ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
+    except KeyboardInterrupt:
+        print("\nStopped.")
 
 
 if __name__ == "__main__":

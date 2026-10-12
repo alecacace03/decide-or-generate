@@ -292,14 +292,16 @@ footer { border-top: 1px solid var(--rule); padding-top: 24px; font-size: 14px; 
         <text x="290" y="56" font-size="13" fill="var(--paper)" text-anchor="middle" font-weight="700">1 forward</text>
         <text x="290" y="74" font-size="13" fill="var(--paper)" text-anchor="middle" font-weight="700">pass</text>
         <path d="M350 60 H386" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#ar)"/>
-        <rect x="390" y="34" width="150" height="24" rx="5" fill="var(--block-wash)"/>
-        <rect x="390" y="34" width="41" height="24" rx="5" fill="var(--block)" opacity=".85"/>
-        <text x="444" y="51" font-size="12.5" fill="var(--ink)">destructive 0.275</text>
-        <rect x="390" y="62" width="150" height="24" rx="5" fill="var(--allow-wash)"/>
-        <rect x="390" y="62" width="109" height="24" rx="5" fill="var(--allow)" opacity=".85"/>
-        <text x="502" y="79" font-size="12.5" fill="var(--ink)">safe 0.725</text>
-        <text x="560" y="56" font-size="13" fill="var(--ink)" font-weight="700">≈ 10 ms</text>
-        <text x="560" y="75" font-size="12.5" fill="var(--muted)">always valid</text>
+        <text x="390" y="51" font-size="12.5" fill="var(--ink)">destructive</text>
+        <rect x="472" y="39" width="110" height="16" rx="4" fill="var(--block-wash)"/>
+        <rect x="472" y="39" width="30" height="16" rx="4" fill="var(--block)" opacity=".85"/>
+        <text x="590" y="51" font-size="12.5" fill="var(--ink)" font-weight="600">0.275</text>
+        <text x="390" y="79" font-size="12.5" fill="var(--ink)">safe</text>
+        <rect x="472" y="67" width="110" height="16" rx="4" fill="var(--allow-wash)"/>
+        <rect x="472" y="67" width="80" height="16" rx="4" fill="var(--allow)" opacity=".85"/>
+        <text x="590" y="79" font-size="12.5" fill="var(--ink)" font-weight="600">0.725</text>
+        <text x="390" y="110" font-size="13" fill="var(--ink)" font-weight="700">≈ 10 ms</text>
+        <text x="448" y="110" font-size="12.5" fill="var(--muted)">· always one of the allowed answers</text>
 
         <text x="0" y="150" font-size="13" font-weight="700" fill="var(--s2)" letter-spacing="1">SYSTEM 2 · LLM</text>
         <rect x="0" y="164" width="190" height="52" rx="8" fill="var(--wash)" stroke="var(--rule)"/>
@@ -521,7 +523,7 @@ footer { border-top: 1px solid var(--rule); padding-top: 24px; font-size: 14px; 
   </div>
   <div class="run">
     <figure>
-      <div class="shot"><img src="dashboard.jpg" alt="The local dashboard: a command box with examples, a threshold slider, and three result cards. The decision model allows git push --force at 80% confidence, which is wrong. The LLM blocks it in 748 ms. The hybrid escalates to the LLM and blocks it in 787 ms." width="800" height="600"></div>
+      <div class="shot"><img src="dashboard.jpg" alt="The local dashboard checking git push --force origin main: a command box with examples and a threshold slider, then three result cards. The decision model allows it at 80% confidence, which is wrong. The LLM blocks it in 740 ms. The hybrid escalates to the LLM and blocks it in 787 ms." width="568" height="399"></div>
       <figcaption>The local dashboard checking <code>git push --force origin main</code>. The decision model is wrong but only 80% sure, so the hybrid escalates and the LLM blocks it.</figcaption>
     </figure>
     <div style="display:grid;gap:20px;align-content:start">
@@ -661,7 +663,7 @@ function svg(w, h, body, label) {
 
 /* latency percentiles, log scale, grouped by percentile */
 function drawLatency() {
-  const W = 520, H = 230, left = 96, right = 70, top = 8, rowH = 22, gap = 16;
+  const W = 520, H = 290, left = 96, right = 70, top = 34, rowH = 22, gap = 16;
   const series = [["Decision model", S.s1, "--s1"], ["LLM only", S.s2, "--s2"], ["Hybrid", S.hybrid, "--hy"]];
   const lo = Math.log10(5), hi = Math.log10(2000);
   const x = v => left + (Math.log10(v) - lo) / (hi - lo) * (W - left - right);
@@ -680,7 +682,7 @@ function drawLatency() {
     });
     y += rowH * 3 + gap - 6;
   });
-  b += `<g font-size="12" fill="var(--ink-2)">${series.map(([n, , c], i) => `<rect x="${left + i * 130}" y="${H - 44}" width="10" height="10" rx="2" fill="var(${c})"/><text x="${left + i * 130 + 15}" y="${H - 35}">${n}</text>`).join("")}</g>`;
+  b += `<g font-size="12" fill="var(--ink-2)">${series.map(([n, , c], i) => `<rect x="${left + i * 130}" y="4" width="10" height="10" rx="2" fill="var(${c})"/><text x="${left + i * 130 + 15}" y="13">${n}</text>`).join("")}</g>`;
   $("latchart").innerHTML = svg(W, H, b, "Latency p50, p95 and p99 for each pipeline on a log scale");
 }
 
@@ -688,7 +690,7 @@ function drawLatency() {
 function drawAccuracy() {
   const groups = [["All 78", c => c.accuracy], ["Held-out 20", c => c.accuracy_split.heldout], ["Hard 32", c => c.accuracy_hard]];
   const series = [["Decision model", S.s1, "--s1"], ["LLM only", S.s2, "--s2"], ["Hybrid", S.hybrid, "--hy"]];
-  const W = 520, H = 230, left = 34, bottom = 46, top = 10;
+  const W = 520, H = 240, left = 42, bottom = 46, top = 22;
   const gw = (W - left) / groups.length, bw = 30;
   const y = v => top + (1 - v) * (H - top - bottom);
   let b = "";
@@ -767,14 +769,14 @@ document.querySelectorAll("[data-t]").forEach(b => b.addEventListener("click", (
 
 /* ---------- calibration ---------- */
 function drawCalibration() {
-  const W = 640, H = 300, left = 46, right = 180, top = 12, bottom = 42;
+  const W = 640, H = 316, left = 46, right = 180, top = 30, bottom = 42;
   const X = v => left + (v - 0.5) / 0.5 * (W - left - right);
   const Y = v => top + (1 - v) * (H - top - bottom);
   let b = "";
   [0, 0.25, 0.5, 0.75, 1].forEach(t => b += `<line x1="${left}" x2="${W - right}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--rule)"/><text x="${left - 6}" y="${Y(t) + 4}" font-size="11.5" fill="var(--muted)" text-anchor="end">${t * 100}%</text>`);
   [0.5, 0.6, 0.7, 0.8, 0.9, 1].forEach(t => b += `<text x="${X(t)}" y="${H - bottom + 17}" font-size="11.5" fill="var(--muted)" text-anchor="middle">${Math.round(t * 100)}%</text>`);
   b += `<text x="${(left + W - right) / 2}" y="${H - 4}" font-size="12" fill="var(--ink-2)" text-anchor="middle">stated confidence</text>`;
-  b += `<text x="12" y="${top + 4}" font-size="12" fill="var(--ink-2)" transform="rotate(-90 12 ${top + 4})" text-anchor="end">actual accuracy</text>`;
+  b += `<text x="${left - 40}" y="12" font-size="12" fill="var(--ink-2)">↑ actual accuracy</text>`;
   b += `<line x1="${X(0.5)}" y1="${Y(0.5)}" x2="${X(1)}" y2="${Y(1)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
   const bins = S.s1.calibration;
   b += `<polyline fill="none" stroke="var(--s1)" stroke-width="2" points="${bins.map(k => X(k.confidence) + "," + Y(k.accuracy)).join(" ")}"/>`;
@@ -826,7 +828,7 @@ function showCommand(r) {
     ${card("s2", "System 2 · LLM", "Writes JSON token by token", r.d2,
       `<div><div class="sub" style="margin-bottom:6px">What it wrote</div><div class="raw">${esc(r.raw)}</div></div>
        <dl><dt>Latency</dt><dd>${ms(r.l2)}</dd><dt>Tokens (in + out)</dt><dd>${r.t2}</dd></dl>`, r.e)}
-    ${card("hy", "Hybrid · circuit breaker", "Decision model first, LLM if unsure", hd,
+    ${card("hy", "Hybrid · safety check", "Decision model first, LLM if unsure", hd,
       `<div class="route">${escd
         ? `<b>Escalated.</b> The decision model was ${pct(r.c1)} sure, below the ${pct(THR)} threshold, so the LLM decided.`
         : `<b>Fast path.</b> The decision model was ${pct(r.c1)} sure, at or above the ${pct(THR)} threshold. The LLM was not called.`}</div>

@@ -5,7 +5,8 @@ System 1: Laya-MLX decision model. One forward pass, logits read out over a clos
 System 2: a small instruction-tuned LLM (Qwen2.5 via mlx-lm) that writes a JSON
           answer token by token.
 Hybrid:   System 1 answers when it is confident; below the threshold the command
-          is escalated to System 2.
+          is escalated to System 2. The routing is applied in server.run() and in
+          benchmarks/run_benchmark.py, which reuse one System 1 result per command.
 """
 import json
 import os
@@ -108,19 +109,3 @@ class Engines:
             "output_tokens": len(self.s2_tok.encode(text)),
             "valid": valid,
         }
-
-    def hybrid(self, command, threshold=DEFAULT_THRESHOLD, s1=None):
-        """Fast path when System 1 is confident, otherwise escalate to System 2.
-
-        If System 2 returns unparseable output, fall back to System 1's answer so the
-        pipeline always produces a valid decision.
-        """
-        s1 = s1 or self.system1(command)
-        if s1["confidence"] >= threshold:
-            return {"route": "fast", "decision": s1["decision"], "latency_ms": s1["latency_ms"],
-                    "s1": s1, "s2": None, "threshold": threshold}
-        s2 = self.system2(command)
-        decision = s2["decision"] if s2["valid"] else s1["decision"]
-        return {"route": "escalated" if s2["valid"] else "escalated_fallback", "decision": decision,
-                "latency_ms": s1["latency_ms"] + s2["latency_ms"], "s1": s1, "s2": s2,
-                "threshold": threshold}
