@@ -579,13 +579,12 @@ footer { border-top: 1px solid var(--rule); padding-top: 24px; font-size: 14px; 
 </section>
 
 <section class="col" id="next">
-  <div class="eyebrow">Limits and next steps</div>
+  <div class="eyebrow">Limits</div>
   <h2>What these numbers don't prove</h2>
   <ul class="plain">
     <li>78 commands is a small set. Accuracy figures carry error bars of roughly ±5–10 points.</li>
     <li>I wrote the labels myself, and a few are debatable. I dropped commands like <code>rm -rf node_modules</code> rather than force a label.</li>
     <li>The System 2 prompt was refined on the development set. The held-out set (LLM 90%, decision model 75%, hybrid 80%) is the fairer estimate.</li>
-    <li>Next: <b>fit the decision model's temperature on labeled data</b> so that "97%" means 97%, and try <b>asymmetric thresholds</b> (letting a destructive command through costs far more than a false block).</li>
     <li>Latency is for one request at a time on one machine. Batching would raise System 1 throughput much further.</li>
   </ul>
 </section>
