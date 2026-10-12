@@ -83,10 +83,10 @@ At 0.90, most commands get a 10 ms answer. The run uses 60% fewer LLM tokens and
 - **LLM alone**: open-ended output (explanations, rewrites), rare calls, or a task the decision model has no prior for.
 - **Hybrid**: closed label set, but some inputs need real reasoning, and the decision model's confidence ranks its errors (AUROC > 0.5). Tune the threshold on labeled data.
 
-## 7. Limits and next steps
+## 7. Limits
 
 - 78 commands is small; the accuracy numbers have wide error bars (±5–10 points).
 - Labels are mine. Some commands are debatable (`rm -rf node_modules` was dropped for that reason).
-- System 1 was used zero-shot. The biggest gain would come from **fitting its temperature on labeled data**, or fine-tuning it, so its 97% means 97%.
-- **Asymmetric thresholds**: a missed destructive command costs far more than a false block. Next, try "fast-allow only at P(safe) ≥ 0.98, fast-block at P(destructive) ≥ 0.8".
+- The System 2 prompt was refined on the dev set, so the held-out set (LLM 90%, decision model 75%, hybrid 80%) is the fairer estimate.
+- System 1 was used zero-shot, without any training on this task.
 - Latency was measured one request at a time on one machine. Batch throughput for System 1 would be much higher.
