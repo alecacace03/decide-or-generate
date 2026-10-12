@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# MLX & Hugging Face caches
+.cache/
+huggingface/
+
+.DS_Store
+*.log
+
+# local tooling
+.claude/
+
+# first iteration, kept locally only
+archive/

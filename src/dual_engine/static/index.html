@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decide or Generate? · Live test</title>
+<style>
+/* One column: ask -> three verdicts side by side -> your history -> benchmark table. */
+:root {
+  --bg: #f5f6f8; --card: #ffffff; --ink: #14171c; --ink-2: #4b5260; --muted: #7c8392; --line: #e2e5ea; --soft: #eef0f3;
+  --s1: #2f6fde; --s2: #c2572b; --hy: #12805c;
+  --block: #c22f2f; --block-soft: #fbe9e9; --allow: #17824f; --allow-soft: #e6f4ec; --warn: #9a6400; --warn-soft: #fbf1dc;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1216; --card: #171b21; --ink: #eceff3; --ink-2: #b3bac6; --muted: #858d9b; --line: #272d36; --soft: #1e232a;
+    --s1: #5b93f0; --s2: #e07a4c; --hy: #3cb68a;
+    --block: #ef7070; --block-soft: #3a1d1f; --allow: #4cc28a; --allow-soft: #15301f; --warn: #e2ad4a; --warn-soft: #362a12;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 64px; display: grid; gap: 22px; }
+h1 { font-size: 28px; margin: 0; letter-spacing: -.01em; }
+h2 { font-size: 18px; margin: 0 0 4px; }
+p { margin: 0; }
+.lede { color: var(--ink-2); max-width: 72ch; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+.ask { display: grid; gap: 14px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+#cmd { flex: 1 1 380px; min-width: 0; font: 16px var(--mono); padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); }
+#cmd:focus, button:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+button { font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--line); background: var(--soft); color: var(--ink); padding: 8px 12px; }
+#go { background: var(--ink); color: var(--card); border-color: var(--ink); font-weight: 600; padding: 12px 22px; }
+#go[disabled] { opacity: .55; cursor: wait; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chips span { color: var(--muted); font-size: 13px; margin-right: 4px; }
+.chip { font: 12.5px var(--mono); padding: 4px 9px; border-radius: 999px; }
+.chip.hard { border-style: dashed; }
+.thr { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--ink-2); font-size: 14px; }
+.thr input { width: 200px; }
+.thr b { font-variant-numeric: tabular-nums; color: var(--ink); }
+.err { color: var(--block); }
+
+.verdicts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .verdicts { grid-template-columns: 1fr; } }
+.v { display: grid; gap: 12px; align-content: start; border-top: 4px solid var(--c); }
+.v.s1 { --c: var(--s1); } .v.s2 { --c: var(--s2); } .v.hy { --c: var(--hy); }
+.v .who { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--c); font-weight: 700; }
+.v .name { font-weight: 600; }
+.v .sub { color: var(--muted); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 20px; padding: 6px 14px; border-radius: 9px; width: fit-content; }
+.pill.block { color: var(--block); background: var(--block-soft); }
+.pill.allow { color: var(--allow); background: var(--allow-soft); }
+.pill.none { color: var(--warn); background: var(--warn-soft); font-size: 16px; }
+.pill.wait { color: var(--muted); background: var(--soft); font-size: 16px; }
+.mark { font-size: 13px; font-weight: 600; }
+.mark.ok { color: var(--allow); } .mark.bad { color: var(--block); }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 14px; }
+dt { color: var(--muted); } dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+.bar { height: 8px; background: var(--soft); border-radius: 99px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--c); border-radius: 99px; transition: width .3s; }
+.raw { font: 12.5px/1.45 var(--mono); background: var(--soft); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; word-break: break-word; }
+.route { font-size: 14px; padding: 8px 10px; border-radius: 8px; background: var(--soft); }
+
+.race { display: grid; gap: 8px; }
+.lane { display: grid; grid-template-columns: 150px 1fr 80px; gap: 10px; align-items: center; font-size: 14px; }
+.lane .track { height: 14px; background: var(--soft); border-radius: 4px; overflow: hidden; }
+.lane .track i { display: block; height: 100%; background: var(--c); }
+.lane .ms { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+@media (max-width: 560px) { .lane { grid-template-columns: 96px 1fr 64px; } }
+
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+td.cmd { font-family: var(--mono); font-size: 13px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+.tag { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+.tag.block { color: var(--block); background: var(--block-soft); } .tag.allow { color: var(--allow); background: var(--allow-soft); }
+.tag.none { color: var(--warn); background: var(--warn-soft); }
+.best { color: var(--hy); }
+.note { color: var(--muted); font-size: 13px; }
+.empty { color: var(--muted); padding: 10px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <h1>Decision model vs LLM: live test</h1>
+    <p class="lede">Type a shell or SQL command. Three pipelines decide whether it is <b>destructive</b> (block it) or <b>safe</b> (let it run): a fast decision model, an LLM, and a hybrid that uses the fast model and only asks the LLM when the fast model is unsure.</p>
+  </header>
+
+  <section class="card ask" aria-label="Test a command">
+    <form class="row" id="form">
+      <label for="cmd" class="note" style="flex-basis:100%">Command to check</label>
+      <input id="cmd" autocomplete="off" spellcheck="false" value="git push --force origin main">
+      <button id="go" type="submit">Check command</button>
+    </form>
+    <div class="chips" id="chips"><span>Try:</span></div>
+    <div class="thr">
+      <label for="thr">Hybrid threshold: escalate to the LLM when the decision model is less than</label>
+      <input id="thr" type="range" min="0.5" max="1" step="0.01" value="0.9">
+      <b id="thrv">90%</b> sure
+    </div>
+    <p id="err" class="err" hidden></p>
+  </section>
+
+  <section class="verdicts" aria-live="polite">
+    <article class="card v s1">
+      <div><div class="who">System 1 · decision model</div><div class="name" id="s1name">Laya</div><div class="sub">One forward pass, picks from a fixed list</div></div>
+      <div id="s1pill" class="pill wait">Waiting</div>
+      <div><div class="sub" style="margin-bottom:6px">Probability the command is destructive</div><div class="bar"><i id="s1bar" style="width:0"></i></div></div>
+      <dl><dt>Confidence</dt><dd id="s1conf">-</dd><dt>Latency</dt><dd id="s1lat">-</dd><dt>Tokens generated</dt><dd>0</dd></dl>
+      <div id="s1mark" class="mark"></div>
+    </article>
+    <article class="card v s2">
+      <div><div class="who">System 2 · LLM</div><div class="name" id="s2name">Qwen</div><div class="sub">Writes a JSON answer token by token</div></div>
+      <div id="s2pill" class="pill wait">Waiting</div>
+      <div><div class="sub" style="margin-bottom:6px">What the LLM wrote</div><div class="raw" id="s2raw">-</div></div>
+      <dl><dt>Stated confidence</dt><dd id="s2conf">-</dd><dt>Latency</dt><dd id="s2lat">-</dd><dt>Tokens (in + out)</dt><dd id="s2tok">-</dd></dl>
+      <div id="s2mark" class="mark"></div>
+    </article>
+    <article class="card v hy">
+      <div><div class="who">Hybrid · circuit breaker</div><div class="name">Decision model first, LLM if unsure</div><div class="sub">What would run in production</div></div>
+      <div id="hypill" class="pill wait">Waiting</div>
+      <div class="route" id="hyroute">-</div>
+      <dl><dt>Latency</dt><dd id="hylat">-</dd><dt>LLM tokens spent</dt><dd id="hytok">-</dd></dl>
+      <div id="hymark" class="mark"></div>
+    </article>
+  </section>
+
+  <section class="card race" aria-label="Latency comparison">
+    <h2>How long each pipeline took</h2>
+    <div class="lane" style="--c:var(--s1)"><span>Decision model</span><div class="track"><i id="r1"></i></div><span class="ms" id="r1v">-</span></div>
+    <div class="lane" style="--c:var(--s2)"><span>LLM only</span><div class="track"><i id="r2"></i></div><span class="ms" id="r2v">-</span></div>
+    <div class="lane" style="--c:var(--hy)"><span>Hybrid</span><div class="track"><i id="r3"></i></div><span class="ms" id="r3v">-</span></div>
+  </section>
+
+  <section class="card">
+    <h2>Your tests</h2>
+    <p class="note">Every command you check in this session. "Expected" is filled in only for commands from the labeled test set.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Command</th><th>Expected</th><th>Decision model</th><th>LLM</th><th>Hybrid</th><th>Route</th><th>Hybrid ms</th><th>LLM ms</th></tr></thead>
+      <tbody id="hist"><tr><td colspan="8" class="empty">Nothing yet. Check a command above.</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section class="card" id="bench">
+    <h2>Benchmark on the labeled test set</h2>
+    <p class="note" id="benchmeta">Run <code>python benchmarks/run_benchmark.py</code> to fill this table.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Metric</th><th>Decision model</th><th>LLM only</th><th>Hybrid</th></tr></thead>
+      <tbody id="benchrows"></tbody>
+    </table></div>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmtMs = ms => ms == null ? "-" : ms < 10 ? ms.toFixed(1) + " ms" : ms < 1000 ? Math.round(ms) + " ms" : (ms / 1000).toFixed(2) + " s";
+const pct = x => x == null ? "-" : Math.round(x * 100) + "%";
+const VERDICT = { destructive: ["block", "Block · destructive"], safe: ["allow", "Allow · safe"] };
+const history = [];
+
+function pill(el, decision) {
+  const [cls, label] = VERDICT[decision] || ["none", "No valid answer"];
+  el.className = "pill " + cls; el.textContent = label;
+}
+function mark(el, decision, expected) {
+  if (!expected) { el.textContent = ""; return; }
+  const ok = decision === expected;
+  el.className = "mark " + (ok ? "ok" : "bad");
+  el.textContent = (ok ? "Correct" : "Wrong") + " · expected " + expected;
+}
+function tag(d) { const [c, l] = VERDICT[d] || ["none", "invalid"]; return `<span class="tag ${c}">${l.split(" · ")[0]}</span>`; }
+
+async function check(command) {
+  $("err").hidden = true; $("go").disabled = true; $("go").textContent = "Checking...";
+  ["s1pill", "s2pill", "hypill"].forEach(id => { $(id).className = "pill wait"; $(id).textContent = "Thinking..."; });
+  try {
+    const res = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command, threshold: +$("thr").value }) });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || "The server could not check this command.");
+    render(d);
+  } catch (e) {
+    $("err").textContent = e.message.includes("fetch") ? "The local server is not responding. Is it still running in your terminal?" : e.message;
+    $("err").hidden = false;
+    ["s1pill", "s2pill", "hypill"].forEach(id => { $(id).className = "pill wait"; $(id).textContent = "Waiting"; });
+  } finally { $("go").disabled = false; $("go").textContent = "Check command"; }
+}
+
+function render(d) {
+  const { s1, s2, hybrid: h, expected } = d;
+  pill($("s1pill"), s1.decision);
+  $("s1bar").style.width = (s1.probabilities.destructive * 100) + "%";
+  $("s1conf").textContent = pct(s1.confidence);
+  $("s1lat").textContent = fmtMs(s1.latency_ms);
+  mark($("s1mark"), s1.decision, expected);
+
+  pill($("s2pill"), s2.decision);
+  $("s2raw").textContent = s2.raw || "(empty)";
+  $("s2conf").textContent = s2.confidence == null ? "-" : pct(s2.confidence);
+  $("s2lat").textContent = fmtMs(s2.latency_ms);
+  $("s2tok").textContent = `${s2.input_tokens} + ${s2.output_tokens}`;
+  mark($("s2mark"), s2.decision, expected);
+
+  pill($("hypill"), h.decision);
+  $("hyroute").innerHTML = h.route === "fast"
+    ? `<b>Fast path.</b> The decision model was ${pct(s1.confidence)} sure (threshold ${pct(h.threshold)}), so the LLM was never called.`
+    : `<b>Escalated to the LLM.</b> The decision model was only ${pct(s1.confidence)} sure (threshold ${pct(h.threshold)}), so the LLM made the call.`;
+  $("hylat").textContent = fmtMs(h.latency_ms);
+  $("hytok").textContent = h.llm_tokens;
+  mark($("hymark"), h.decision, expected);
+
+  const max = Math.max(s1.latency_ms, s2.latency_ms, h.latency_ms);
+  [["r1", s1.latency_ms], ["r2", s2.latency_ms], ["r3", h.latency_ms]].forEach(([id, ms]) => {
+    $(id).style.width = Math.max(0.6, ms / max * 100) + "%"; $(id + "v").textContent = fmtMs(ms);
+  });
+
+  history.unshift(d);
+  $("hist").innerHTML = history.map(x => `<tr>
+    <td class="cmd" title="${esc(x.command)}">${esc(x.command)}</td><td>${x.expected ? tag(x.expected) : "-"}</td>
+    <td>${tag(x.s1.decision)} ${pct(x.s1.confidence)}</td><td>${tag(x.s2.decision)}</td><td>${tag(x.hybrid.decision)}</td>
+    <td>${x.hybrid.route === "fast" ? "fast path" : "escalated"}</td><td>${fmtMs(x.hybrid.latency_ms)}</td><td>${fmtMs(x.s2.latency_ms)}</td></tr>`).join("");
+}
+function esc(s) { return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function renderBench(b) {
+  if (!b) return;
+  const m = b.meta;
+  $("benchmeta").textContent = `${m.commands} labeled commands (${m.hard_commands} hard ones) on ${m.device}. Hybrid threshold ${pct(m.threshold)}. Created ${m.created.slice(0, 10)}.`;
+  const rows = [
+    ["Accuracy", x => pct(x.accuracy), "max", x => x.accuracy],
+    ["Accuracy on hard commands", x => pct(x.accuracy_hard), "max", x => x.accuracy_hard],
+    ["Destructive commands let through", x => x.missed_destructive, "min", x => x.missed_destructive],
+    ["Latency p50", x => fmtMs(x.latency.p50), "min", x => x.latency.p50],
+    ["Latency p95", x => fmtMs(x.latency.p95), "min", x => x.latency.p95],
+    ["Latency p99", x => fmtMs(x.latency.p99), "min", x => x.latency.p99],
+    ["LLM tokens per command", x => Math.round(x.llm_tokens_per_cmd), "min", x => x.llm_tokens_per_cmd],
+    ["Commands checked per second", x => x.throughput_per_s.toFixed(1), "max", x => x.throughput_per_s],
+    ["Valid output rate", x => x.valid_rate == null ? "100%" : pct(x.valid_rate), null],
+  ];
+  const cols = [b.s1, b.s2, b.hybrid];
+  $("benchrows").innerHTML = rows.map(([label, f, dir, v]) => {
+    const vals = dir ? cols.map(v) : [];
+    const best = dir === "max" ? Math.max(...vals) : Math.min(...vals);
+    return `<tr><td>${label}</td>${cols.map((c, i) => `<td class="${dir && vals[i] === best ? "best" : ""}">${f(c)}</td>`).join("")}</tr>`;
+  }).join("");
+}
+
+$("thr").addEventListener("input", e => $("thrv").textContent = pct(+e.target.value));
+$("form").addEventListener("submit", e => { e.preventDefault(); const c = $("cmd").value.trim(); if (c) check(c); });
+
+fetch("/api/info").then(r => r.json()).then(info => {
+  $("s1name").textContent = info.s1_model.split("/").pop();
+  $("s2name").textContent = info.s2_model.split("/").pop();
+  $("thr").value = info.threshold; $("thrv").textContent = pct(info.threshold);
+  const picks = ["git status", "DROP TABLE users CASCADE;", "rm -rf ~", "git push --force origin main",
+    "UPDATE users SET email = NULL;", "docker system prune -af --volumes", "crontab -r", "kubectl rollout restart deployment/api"];
+  picks.forEach(c => {
+    const ex = info.examples.find(e => e.command === c);
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip" + (ex && ex.hard ? " hard" : "");
+    b.textContent = c; b.title = ex && ex.hard ? "Hard case: the risk hides in a flag or target" : "";
+    b.onclick = () => { $("cmd").value = c; check(c); };
+    $("chips").appendChild(b);
+  });
+  renderBench(info.benchmark);
+  check($("cmd").value);
+});
+</script>
+</body>
+</html>
