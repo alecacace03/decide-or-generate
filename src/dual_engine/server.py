@@ -38,6 +38,10 @@ def info():
 
 
 def run(command, threshold):
+    # The GPU clocks down after a few idle seconds, so the first pass after a pause takes
+    # 40-70 ms instead of ~10 ms. An untimed warm-up pass makes the live numbers match the
+    # benchmark, which measures steady traffic.
+    ENGINES.system1("warmup")
     s1 = ENGINES.system1(command)
     s2 = ENGINES.system2(command)
     # The hybrid reuses the System 1 result; it only "pays" for System 2 when it escalates.
